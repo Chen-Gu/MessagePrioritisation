@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!-- debug config -->
+<launch>
+    <copy file="piccadilly.net.xml" />
+    <copy file="piccadilly.rou.xml" />
+    <copy file="piccadilly.poly.xml" />
+    <copy file="piccadilly.sumo.cfg" type="config" />
+</launch>
+

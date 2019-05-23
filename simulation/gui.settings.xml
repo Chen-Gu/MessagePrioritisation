@@ -1,0 +1,5 @@
+<!-- filename: gui.settings.xml -->
+<viewsettings>
+    <viewport x="1100" y="1000" zoom="500"/>
+    <delay value="100"/>
+</viewsettings>
