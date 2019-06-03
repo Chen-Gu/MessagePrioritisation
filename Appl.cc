@@ -1,8 +1,13 @@
-
 #include "Appl.h"
 
 #include <stdlib.h>
+#include <math.h>
 #include "ApplMessage_m.h"
+
+#include <iostream>
+#include <fstream>
+
+bool emptyFile = false;
 
 using Veins::TraCIMobilityAccess;
 using Veins::AnnotationManagerAccess;
@@ -12,13 +17,24 @@ Define_Module(Appl);
 void Appl::initialize(int stage)
 {
     DemoBaseApplLayer::initialize(stage);
-    if (stage == 0) {
-            //setup veins pointers
-            mobility = TraCIMobilityAccess().get(getParentModule());
-            traci = mobility->getCommandInterface();
-            traciVehicle = mobility->getVehicleCommandInterface();
-            lastSent = simTime();
-        }
+    std::ofstream emp;
+
+    if (stage == 0) 
+    {
+        //setup veins pointers
+        mobility = TraCIMobilityAccess().get(getParentModule());
+        traci = mobility->getCommandInterface();
+        traciVehicle = mobility->getVehicleCommandInterface();
+        lastSent = simTime();
+    }
+
+    if (emptyFile == false)
+    {
+        emp.open("results.txt", std::ofstream::out | std::ofstream::trunc);
+        emp << "Time|CurrentVehicleID|ReceivedVehicleID|Speed|Heading|Distance|Acceleration"<<std::endl;
+        emp.close();
+        emptyFile = true;
+    }
 }
 
 void Appl::receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj, cObject* details) {
@@ -28,21 +44,46 @@ void Appl::receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj,
     }
 }
 
+double calculateDistance (Coord mylocation, Coord received)
+{
+    double lon1 = mylocation.x;
+    double lat1 = mylocation.y;
+    double lon2 = received.x;
+    double lat2 = received.y;
+
+    return sqrt((lon1-lon2)*(lon1-lon2)+(lat1-lat2)*(lat1-lat2));
+}
+
 void Appl::onWSM(BaseFrame1609_4* frame)
 {
     ApplMessage* wsm = check_and_cast<ApplMessage*>(frame);
+    double distance = 0;
 
-    EV << "["<<myId<<"]"<<"Receive message from vehicle [" << wsm->getSenderAddress() <<"]" <<
-       " with speed: "<<wsm->getSpeed() <<"m/s" <<
-       ", direction: "<<wsm->getDirection() <<
-       ", location: "<<wsm->getLocation() <<
-       ", acceleration: "<<wsm->getAcceleration() <<"\n";
+    std::ofstream output;
+
+    if (output.is_open() == false)
+    {
+        output.open ("results.txt", std::fstream::app);
+    }
+
+    distance = calculateDistance(mobility->getPositionAt(simTime()), wsm->getLocation());
+    Coord mylocation = mobility->getPositionAt(simTime());
+
+    output  << simTime() <<"|"
+            << myId <<"|"
+            << wsm->getSenderAddress() <<"|"
+            << wsm->getSpeed() <<"|"
+            //<<", direction: "<<wsm->getDirection() 
+            << 180*(atan2(wsm->getDirection().y, wsm->getDirection().x))/3.14 << "|"
+            //", location: "<<wsm->getLocation() << "(" 
+            << distance << "|"
+            << wsm->getAcceleration() <<"\n";
 }
 
 void Appl::handlePositionUpdate(cObject* obj) {
     DemoBaseApplLayer::handlePositionUpdate(obj);
 
-    if (simTime()-lastSent >= 1)
+    if (simTime()-lastSent >= CAM_INTER)
     {
         ApplMessage* wsm = new ApplMessage();
 
@@ -50,16 +91,15 @@ void Appl::handlePositionUpdate(cObject* obj) {
         wsm->setSpeed(mobility->getSpeed());
         wsm->setDirection(mobility->getCurrentDirection());
         wsm->setLocation(mobility->getPositionAt(simTime()));
-        wsm->setAcceleration(traciVehicle->getAccel());
 
-        //EV << "Speed is: "<< wsm->getSpeed()<<"\n";
-        //EV << "getCurrentDirection: " << wsm->getDirection()<<"\n";
-        //EV << "Position: " << wsm->getLocation()<<"\n";
-        //EV << "Acceleration is: "<< wsm->getAcceleration()<<"\n";
+        //Calculate the acceleration
+        CurrAcceleration = (mobility->getSpeed() - lastSpeed)/0.2;
+
+        wsm->setAcceleration(CurrAcceleration);
 
         populateWSM(wsm);
         sendDown(wsm);
         lastSent = simTime();
-        //EV << "["<<myId<<"]"<<"Handle the position\n";
+        lastSpeed = mobility->getSpeed();
     }
 }

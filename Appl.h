@@ -8,6 +8,8 @@
 #ifndef APPL_H_
 #define APPL_H_
 
+#define CAM_INTER 0.2
+
 #include "/home/veins/src/veins/src/veins/modules/application/ieee80211p/DemoBaseApplLayer.h"
 #include "/home/veins/src/veins/src/veins/modules/mobility/traci/TraCIMobility.h"
 #include "/home/veins/src/veins/src/veins/modules/mobility/traci/TraCICommandInterface.h"
@@ -28,6 +30,9 @@ class Appl : public DemoBaseApplLayer {
         TraCICommandInterface* traci;
         TraCICommandInterface::Vehicle* traciVehicle;
         simtime_t lastSent; // the last time this sent a message
+
+        double lastSpeed;   // the last-time speed of a car
+        double CurrAcceleration;
 
         virtual void onWSM(BaseFrame1609_4* frame);
         virtual void handlePositionUpdate(cObject* obj);
