@@ -58,6 +58,11 @@ void Appl::onWSM(BaseFrame1609_4* frame)
 {
     ApplMessage* wsm = check_and_cast<ApplMessage*>(frame);
     double distance = 0;
+    double myHeading = 0;
+    double receivedVehicleHeading = 0;
+
+    myHeading = 180*(atan2(mobility->getCurrentDirection().y, mobility->getCurrentDirection().x))/3.14;
+    receivedVehicleHeading = 180*(atan2(wsm->getDirection().y, wsm->getDirection().x))/3.14;
 
     std::ofstream output;
 
@@ -73,8 +78,8 @@ void Appl::onWSM(BaseFrame1609_4* frame)
             << myId <<"|"
             << wsm->getSenderAddress() <<"|"
             << wsm->getSpeed() <<"|"
-            //<<", direction: "<<wsm->getDirection() 
-            << 180*(atan2(wsm->getDirection().y, wsm->getDirection().x))/3.14 << "|"
+            //<<", direction: "<<wsm->getDirection()
+            << abs(myHeading - receivedVehicleHeading) << "|"
             //", location: "<<wsm->getLocation() << "(" 
             << distance << "|"
             << wsm->getAcceleration() <<"\n";
