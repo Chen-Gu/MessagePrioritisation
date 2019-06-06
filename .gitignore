@@ -2,6 +2,7 @@ Makefile
 /out
 /simulation/results
 /simulation/test.py
+/simulation/test.txt
 /simulation/results.txt
 /simulation/*.png
 MessagePrioritisation
