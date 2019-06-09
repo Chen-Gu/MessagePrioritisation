@@ -1,8 +1,8 @@
 Makefile
 /out
+/simulation/temp
 /simulation/results
 /simulation/test.py
-/simulation/test.txt
-/simulation/results.txt
+/simulation/*.txt
 /simulation/*.png
 MessagePrioritisation

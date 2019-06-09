@@ -7,7 +7,8 @@
 #include <iostream>
 #include <fstream>
 
-bool emptyFile = false;
+bool msgReceiveFile = false;
+bool msgSentFile = false;
 
 using Veins::TraCIMobilityAccess;
 using Veins::AnnotationManagerAccess;
@@ -26,14 +27,24 @@ void Appl::initialize(int stage)
         traci = mobility->getCommandInterface();
         traciVehicle = mobility->getVehicleCommandInterface();
         lastSent = simTime();
+        lastSpeed = 0;
     }
 
-    if (emptyFile == false)
+    if (msgReceiveFile == false)
     {
-        emp.open("results.txt", std::ofstream::out | std::ofstream::trunc);
-        emp << "Time|CurrentVehicleID|ReceivedVehicleID|Speed|Heading|Distance|Acceleration"<<std::endl;
+        emp.open("results_received.txt", std::ofstream::out | std::ofstream::trunc);
+        emp << "Time|CurrentVehicleID|ReceivedVehicleID|Speed|Direction|Distance|Acceleration"<<std::endl;
         emp.close();
-        emptyFile = true;
+        msgReceiveFile = true;
+    }
+
+    std::ofstream sent;
+    if (msgSentFile == false)
+    {
+        sent.open("results_sent.txt", std::ofstream::out | std::ofstream::trunc);
+        sent << "Time|CurrentVehicleID|Speed|Direction|Distance|Acceleration"<<std::endl;
+        sent.close();
+        msgSentFile = true;
     }
 }
 
@@ -58,17 +69,17 @@ void Appl::onWSM(BaseFrame1609_4* frame)
 {
     ApplMessage* wsm = check_and_cast<ApplMessage*>(frame);
     double distance = 0;
-    double myHeading = 0;
-    double receivedVehicleHeading = 0;
+    double myDirection = 0;
+    double receivedVehicleDirection = 0;
 
-    myHeading = 180*(atan2(mobility->getCurrentDirection().y, mobility->getCurrentDirection().x))/3.14;
-    receivedVehicleHeading = 180*(atan2(wsm->getDirection().y, wsm->getDirection().x))/3.14;
+    myDirection = 180*(atan2(mobility->getCurrentDirection().y, mobility->getCurrentDirection().x))/3.14;
+    receivedVehicleDirection = 180*(atan2(wsm->getDirection().y, wsm->getDirection().x))/3.14;
 
     std::ofstream output;
 
     if (output.is_open() == false)
     {
-        output.open ("results.txt", std::fstream::app);
+        output.open ("results_received.txt", std::fstream::app);
     }
 
     distance = calculateDistance(mobility->getPositionAt(simTime()), wsm->getLocation());
@@ -79,7 +90,7 @@ void Appl::onWSM(BaseFrame1609_4* frame)
             << wsm->getSenderAddress() <<"|"
             << wsm->getSpeed() <<"|"
             //<<", direction: "<<wsm->getDirection()
-            << abs(myHeading - receivedVehicleHeading) << "|"
+            << abs(myDirection - receivedVehicleDirection) << "|"
             //", location: "<<wsm->getLocation() << "(" 
             << distance << "|"
             << wsm->getAcceleration() <<"\n";
@@ -88,23 +99,53 @@ void Appl::onWSM(BaseFrame1609_4* frame)
 void Appl::handlePositionUpdate(cObject* obj) {
     DemoBaseApplLayer::handlePositionUpdate(obj);
 
-    if (simTime()-lastSent >= CAM_INTER)
+    std::ofstream output_sent;
+    if (output_sent.is_open() == false)
+    {
+        output_sent.open ("results_sent.txt", std::fstream::app);
+    }
+
+    simtime_t currentTime = simTime();
+    double currentSpeed = mobility->getSpeed();
+    Coord currentDir = mobility->getCurrentDirection();
+    Coord currentposition = mobility->getPositionAt(currentTime);
+
+    double currH = 180*(atan2(currentDir.y, currentDir.x))/3.14;
+    double lastH = 180*(atan2(lastDirection.y, lastDirection.x))/3.14;
+    
+    if (currentTime - lastSent >= CAM_INTER || 
+        abs(currentSpeed - lastSpeed) >= 1.0 ||
+        abs(currH - lastH) > 4 ||
+        calculateDistance(currentposition, lastPosition) > 5.0)
     {
         ApplMessage* wsm = new ApplMessage();
 
         wsm->setSenderAddress(myId);
-        wsm->setSpeed(mobility->getSpeed());
-        wsm->setDirection(mobility->getCurrentDirection());
-        wsm->setLocation(mobility->getPositionAt(simTime()));
+        wsm->setSpeed(currentSpeed);
+        wsm->setDirection(currentDir);
+        wsm->setLocation(currentposition);
 
         //Calculate the acceleration
-        CurrAcceleration = (mobility->getSpeed() - lastSpeed)/0.2;
+        if (currentTime - lastSent <= 0)
+            CurrAcceleration = (currentSpeed - lastSpeed)/0.1;
+        else
+            CurrAcceleration = (currentSpeed - lastSpeed)/(currentTime - lastSent);
 
         wsm->setAcceleration(CurrAcceleration);
 
         populateWSM(wsm);
         sendDown(wsm);
-        lastSent = simTime();
-        lastSpeed = mobility->getSpeed();
+
+        output_sent  << currentTime <<"|"
+            << myId <<"|"
+            << currentSpeed <<"|"
+            << currentDir << "|"
+            << currentposition << "|"
+            << CurrAcceleration <<"\n";
+
+        lastSent = currentTime;
+        lastSpeed = currentSpeed;
+        lastDirection = currentDir;
+        lastPosition = currentposition;
     }
 }

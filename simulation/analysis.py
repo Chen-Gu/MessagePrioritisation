@@ -2,13 +2,13 @@ import math
 from collections import Counter
 import matplotlib.pyplot as plt
 
-MIN_MESSAGE_THRESHOLD = 10
-MONITOR_VEHICLE_ID = 93
+MIN_MESSAGE_THRESHOLD = 20
+MONITOR_VEHICLE_ID = 117
 
 def getSpeedUtility(s):
 	return 1/(1+math.exp(-0.15*s+5))
 
-def getHeadingUtility(h):
+def getDirectionUtility(h):
 	return 0.0055 * h
 
 def getDistanceUtility(d):
@@ -22,13 +22,20 @@ def CalculateTotalUtility(s, h, d, a):
 	return 0.25* (s+h+d+a)
 
 # Calculate the number of messages per second based on the message sent 
-def calculateMessagePerSecond(timeList):
+def calculateMessageSentPerSecond(timeList):
 	time = []
 	for i in timeList:
 		time.append(math.floor(i))
 	
 	return dict(Counter(time))
-	#print(dict(Counter(time)))
+
+# Calculate the number of messages per second based on the message received 
+def calculateMessageReceivedPerSecond(timeList):
+	time = []
+	for i in timeList:
+		time.append(math.floor(i))
+	
+	return dict(Counter(time))
 
 # Calculate the number of cars per second based on the car's ID from message sent.
 def calculateVehiclePerSecond(timeList, myVehicleList, receivedVehicleList):
@@ -63,7 +70,7 @@ def calculateVehiclePerSecond(timeList, myVehicleList, receivedVehicleList):
 # Calculate vehicles that sent messages to current vehicle
 def calculateVehicleCommunication(monitorVehicleID):
 	vehicleInfoList =[]
-	with open("results.txt", "r") as results:
+	with open("results_received.txt", "r") as results:
 		next(results)
 		for line in results:
 			token = line.split('|')
@@ -73,7 +80,7 @@ def calculateVehicleCommunication(monitorVehicleID):
 				vehicleInfo.append(int(token[2]))
 				
 				vehicleInfo.append(CalculateTotalUtility(getSpeedUtility(float(token[3])), 
-					getHeadingUtility(float(token[4])),
+					getDirectionUtility(float(token[4])),
 					getDistanceUtility(float(token[5])),
 					getAccelerationUtility(float(token[6]))))
 				vehicleInfoList.append(vehicleInfo)
@@ -105,23 +112,33 @@ def drawVehicleUtility(l):
 		#skip drawing lines from vehicles that few messages are received 
 		if len(x_time) < MIN_MESSAGE_THRESHOLD:
 			continue		
-		plt.plot(x_time, y_utility, linestyle='dashed', marker='o', markerfacecolor='blue', markersize=2)
+		plt.plot(x_time, y_utility, marker='o', markerfacecolor='blue', markersize=5)
 
 	plt.xlabel('Time (Second)')
-	plt.xlabel('Utility')
+	plt.ylabel('Utility')
   
 	plt.legend()
 	plt.show()
 
-def drawMessageAndVehiclePerSecond(m, v):
+def drawMessageAndVehiclePerSecond(ms, m, v):
 	x_time = []
 	y_vehicle = []
 
 	x_time2 = []
 	y_message = []
+
+	x_time3 = []
+	y_message_sent = []
+
 	for i in v:
 		x_time.append(i.keys()[0])
 		y_vehicle.append(i.values()[0])
+
+	for i in ms.keys():
+		x_time3.append(i)
+
+	for i in ms.values():
+		y_message_sent.append(i)
 
 	for i in m.keys():
 		x_time2.append(i)
@@ -129,15 +146,17 @@ def drawMessageAndVehiclePerSecond(m, v):
 	for i in m.values():
 		y_message.append(i)
  
-	plt.plot(x_time, y_vehicle, linestyle='dashed', label = "The number of vehicles")
-	plt.plot(x_time2, y_message, label = "The number of messages") 
+	plt.plot(x_time, y_vehicle, linestyle='-.', label = "The number of vehicles")
+	plt.plot(x_time2, y_message, linestyle='-', label = "The number of messages received") 
+	plt.plot(x_time3, y_message_sent, linestyle='--', label = "The number of messages sent")
   
-	plt.xlabel('Time (Second)') 
+	plt.xlabel('Time (Second)')
+	plt.axis([0, 250, 0, 500])
   
-	plt.legend()
+	plt.legend(prop={'size': 9})
 	plt.show()
 
-with open("results.txt", "r") as results:
+with open("results_received.txt", "r") as results, open("results_sent.txt", "r") as results_sent:
 	next(results)
 	timel = []
 	myVehiclel = []
@@ -148,10 +167,16 @@ with open("results.txt", "r") as results:
 		myVehiclel.append(int(token[1]))
 		receivedVehiclel.append(int(token[2]))
 
-	#calculateMessagePerSecond(timel)
+	next(results_sent)
+	timel_sent  =[]
+	for line2 in results_sent:
+		token1 = line2.split('|')
+		timel_sent.append(float(token1[0]))
+
+	#calculateMessageReceivedPerSecond(timel)
 	#calculateVehiclePerSecond(timel, myVehiclel, receivedVehiclel)
 
-	#drawMessageAndVehiclePerSecond(calculateMessagePerSecond(timel), calculateVehiclePerSecond(timel, myVehiclel, receivedVehiclel))
+	drawMessageAndVehiclePerSecond(calculateMessageSentPerSecond(timel_sent), calculateMessageReceivedPerSecond(timel), calculateVehiclePerSecond(timel, myVehiclel, receivedVehiclel))
 
 	drawVehicleUtility(calculateVehicleCommunication(MONITOR_VEHICLE_ID))
 

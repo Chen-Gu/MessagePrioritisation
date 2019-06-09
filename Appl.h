@@ -29,9 +29,12 @@ class Appl : public DemoBaseApplLayer {
         TraCIMobility* mobility;
         TraCICommandInterface* traci;
         TraCICommandInterface::Vehicle* traciVehicle;
-        simtime_t lastSent; // the last time this sent a message
 
+        simtime_t lastSent; // the last time this sent a message
         double lastSpeed;   // the last-time speed of a car
+        Coord lastDirection; 
+        Coord lastPosition;
+        
         double CurrAcceleration;
 
         virtual void onWSM(BaseFrame1609_4* frame);
