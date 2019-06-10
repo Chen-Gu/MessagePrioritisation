@@ -1,9 +1,16 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+import pandas as pd
+import numpy as np
+
+import os
 import math
 from collections import Counter
 import matplotlib.pyplot as plt
 
 MIN_MESSAGE_THRESHOLD = 20
-MONITOR_VEHICLE_ID = 117
 
 def getSpeedUtility(s):
 	return 1/(1+math.exp(-0.15*s+5))
@@ -17,166 +24,113 @@ def getDistanceUtility(d):
 def getAccelerationUtility(a):
 	return 0.05 * a
 
-#equal weights
-def CalculateTotalUtility(s, h, d, a):
-	return 0.25* (s+h+d+a)
+UTILITY_MAP = {
+	"Speed": getSpeedUtility,
+	"Direction": getDirectionUtility,
+	"Distance": getDistanceUtility,
+	"Acceleration": getAccelerationUtility,
+}
 
-# Calculate the number of messages per second based on the message sent 
-def calculateMessageSentPerSecond(timeList):
-	time = []
-	for i in timeList:
-		time.append(math.floor(i))
-	
-	return dict(Counter(time))
+def CalculateTotalUtility(x):
+	weights = {
+		"Speed": 0.25,
+		"Direction": 0.25,
+		"Distance": 0.25,
+		"Acceleration": 0.25,
+	}
 
-# Calculate the number of messages per second based on the message received 
-def calculateMessageReceivedPerSecond(timeList):
-	time = []
-	for i in timeList:
-		time.append(math.floor(i))
+	return sum(UTILITY_MAP[k](x[k]) * v for (k, v) in weights.items())
+
+# Calculate the number of messages per second based on the message received or sent
+def calculateMessagesPerSecond(df):
+	times = np.floor(df["Time"])
 	
-	return dict(Counter(time))
+	return dict(Counter(times))
 
 # Calculate the number of cars per second based on the car's ID from message sent.
-def calculateVehiclePerSecond(timeList, myVehicleList, receivedVehicleList):
-	time = []
-	newList = []
-	last = 0
-	lastItemList = []
-	timeVehicleList = []
-	for i in timeList:
-		time.append(math.floor(i))
+def calculateVehiclePerSecond(df):
+	times = np.floor(df["Time"])
 
-	for i in list(zip(time, myVehicleList, receivedVehicleList)):
-		if i[0] == last:
-			del newList[-1]
-			newList.append(list(set(i+lastItemList)))
-			lastItemList = tuple(set(i+lastItemList))
-		else:
-			newList.append(i)
-			lastItemList = i
-		last = i[0]
+	result = {}
 
-	for i in newList:
-		for m in i:
-			if isinstance(m, float):
-				d = {}
-				d[m] = len(i)-1
-				timeVehicleList.append(d)
+	for time in times.unique():
+		ndf = df[(time <= df["Time"]) & (df["Time"] < time + 1)]
 
-	#print(timeVehicleList)
-	return timeVehicleList
+		result[int(time)] = len(set(ndf["CurrentVehicleID"].values.tolist()) | set(ndf["ReceivedVehicleID"].values.tolist()))
 
-# Calculate vehicles that sent messages to current vehicle
-def calculateVehicleCommunication(monitorVehicleID):
-	vehicleInfoList =[]
-	with open("results_received.txt", "r") as results:
-		next(results)
-		for line in results:
-			token = line.split('|')
-			if monitorVehicleID == int(token[1]):
-				vehicleInfo= []
-				vehicleInfo.append(float(token[0]))
-				vehicleInfo.append(int(token[2]))
-				
-				vehicleInfo.append(CalculateTotalUtility(getSpeedUtility(float(token[3])), 
-					getDirectionUtility(float(token[4])),
-					getDistanceUtility(float(token[5])),
-					getAccelerationUtility(float(token[6]))))
-				vehicleInfoList.append(vehicleInfo)
+	return result
 
-	#print(vehicleInfoList)
-	return vehicleInfoList
+def drawVehicleUtility(rcvd, ident):
+	fig, ax = plt.subplots()
 
+	df = rcvd[rcvd["CurrentVehicleID"] == ident]
 
-def drawVehicleUtility(l):
-	vehicleDic = {}
-	for i in l:
-		if i[1] not in vehicleDic:
-			key = i[1]
-			del i[1]
-			vehicleDic[key] = []
-			vehicleDic[key].append(i)
-		else:
-			key = i[1]
-			del i[1]
-			vehicleDic[key].append(i)
+	gdf = df.groupby(["ReceivedVehicleID"])
 
-	for i in vehicleDic: 
-		vehicleDic[i] = list(zip(*vehicleDic[i]))
-
-	for i in vehicleDic:
-		x_time = vehicleDic[i][0]
-		y_utility = vehicleDic[i][1]
+	for name, group in gdf:
+		x_time = group["Time"].values.tolist()
+		y_utility = group["Utility"].values.tolist()
 
 		#skip drawing lines from vehicles that few messages are received 
 		if len(x_time) < MIN_MESSAGE_THRESHOLD:
-			continue		
-		plt.plot(x_time, y_utility, marker='o', markerfacecolor='blue', markersize=5)
+			continue
 
-	plt.xlabel('Time (Second)')
-	plt.ylabel('Utility')
+		ax.plot(x_time, y_utility, marker='o', markersize=5, label=name)
+
+	ax.set_xlabel('Time (Seconds)')
+	ax.set_ylabel('Utility')
   
-	plt.legend()
-	plt.show()
+	fig.legend()
+	fig.savefig("vehicle_utility/utility_{}.pdf".format(ident))
+
+	del fig
+	del ax
 
 def drawMessageAndVehiclePerSecond(ms, m, v):
-	x_time = []
-	y_vehicle = []
+	fig, ax = plt.subplots()
 
-	x_time2 = []
-	y_message = []
+	x_time = list(v.keys())
+	y_vehicle = list(v.values())
 
-	x_time3 = []
-	y_message_sent = []
+	x_time2 = list(m.keys())
+	y_message = list(m.values())
 
-	for i in v:
-		x_time.append(i.keys()[0])
-		y_vehicle.append(i.values()[0])
-
-	for i in ms.keys():
-		x_time3.append(i)
-
-	for i in ms.values():
-		y_message_sent.append(i)
-
-	for i in m.keys():
-		x_time2.append(i)
-
-	for i in m.values():
-		y_message.append(i)
+	x_time3 = list(ms.keys())
+	y_message_sent = list(ms.values())
  
-	plt.plot(x_time, y_vehicle, linestyle='-.', label = "The number of vehicles")
-	plt.plot(x_time2, y_message, linestyle='-', label = "The number of messages received") 
-	plt.plot(x_time3, y_message_sent, linestyle='--', label = "The number of messages sent")
+	ax.plot(x_time, y_vehicle, linestyle='-.', label = "The number of vehicles")
+	ax.plot(x_time2, y_message, linestyle='-', label = "The number of messages received") 
+	ax.plot(x_time3, y_message_sent, linestyle='--', label = "The number of messages sent")
   
-	plt.xlabel('Time (Second)')
-	plt.axis([0, 250, 0, 500])
+	ax.set_xlabel('Time (Seconds)')
+	ax.axis([0, 250, 0, 500])
   
-	plt.legend(prop={'size': 9})
-	plt.show()
+	fig.legend(prop={'size': 9})
+	fig.savefig("mandvpers.pdf")
 
-with open("results_received.txt", "r") as results, open("results_sent.txt", "r") as results_sent:
-	next(results)
-	timel = []
-	myVehiclel = []
-	receivedVehiclel = []
-	for line in results:
-		token = line.split('|')
-		timel.append(float(token[0]))
-		myVehiclel.append(int(token[1]))
-		receivedVehiclel.append(int(token[2]))
+	del fig
+	del ax
 
-	next(results_sent)
-	timel_sent  =[]
-	for line2 in results_sent:
-		token1 = line2.split('|')
-		timel_sent.append(float(token1[0]))
+def main():
+	print("Opening results files...")
 
-	#calculateMessageReceivedPerSecond(timel)
-	#calculateVehiclePerSecond(timel, myVehiclel, receivedVehiclel)
+	rcvd = pd.read_csv("results_received.txt", sep='|')
+	sent = pd.read_csv("results_sent.txt", sep='|')
 
-	drawMessageAndVehiclePerSecond(calculateMessageSentPerSecond(timel_sent), calculateMessageReceivedPerSecond(timel), calculateVehiclePerSecond(timel, myVehiclel, receivedVehiclel))
+	drawMessageAndVehiclePerSecond(
+		calculateMessagesPerSecond(sent),
+		calculateMessagesPerSecond(rcvd),
+		calculateVehiclePerSecond(rcvd)
+	)
 
-	drawVehicleUtility(calculateVehicleCommunication(MONITOR_VEHICLE_ID))
+	rcvd["Utility"] = rcvd.apply(CalculateTotalUtility, axis=1)
 
+	os.makedirs("vehicle_utility", exist_ok=True)
+
+	all_vids = sorted(set(rcvd["CurrentVehicleID"].values.tolist()))
+	for vid in all_vids:
+		drawVehicleUtility(rcvd, vid)
+
+
+if __name__ == "__main__":
+	main()
