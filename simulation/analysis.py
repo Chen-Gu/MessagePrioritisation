@@ -9,8 +9,14 @@ import os
 import math
 from collections import Counter
 import matplotlib.pyplot as plt
+import queue
+
+from decimal import Decimal
 
 MIN_MESSAGE_THRESHOLD = 20
+
+VERIFY_PER_SEC = 176.7453299687368
+SEC_PER_VERIFY = 1.0 / VERIFY_PER_SEC
 
 def getSpeedUtility(s):
 	return 1/(1+math.exp(-0.25*s+5.5))
@@ -86,6 +92,70 @@ def drawVehicleUtility(rcvd, ident):
 	del fig
 	del ax
 
+def drawVehicleTimeToVerify(rcvd, ident):
+	fig, ax = plt.subplots()
+
+	df = rcvd[rcvd["CurrentVehicleID"] == ident].copy()
+
+	current_time = None
+
+	pqueue = queue.PriorityQueue()
+	time_to_verify = {}
+
+	#print(df)
+
+	for index, row in df.iterrows():
+
+		current_item = (row["Utility"], index, row)
+
+		while not pqueue.empty() and current_time <= row["Time"]:
+
+			item = pqueue.get()
+
+			(item_utility, item_index, item_row) = item
+
+			current_time += SEC_PER_VERIFY
+
+			time_to_verify[item_index] = (current_time - item_row["Time"]) #/ SEC_PER_VERIFY
+
+			assert time_to_verify[item_index] >= 0 #SEC_PER_VERIFY
+
+			#print(item_index, time_to_verify[item_index])
+
+		if pqueue.empty() and (current_time is None or row["Time"] > current_time):
+			current_time = row["Time"]
+
+		pqueue.put(current_item)
+
+		#print("TIME:", current_time, "----", "QSIZE", pqueue.qsize())
+
+	if not pqueue.empty():
+		item = pqueue.get()
+
+		(item_utility, item_index, item_row) = item
+
+		current_time += SEC_PER_VERIFY
+
+		time_to_verify[item_index] = (current_time - item_row["Time"]) #/ SEC_PER_VERIFY
+
+	assert pqueue.empty()
+
+	xs = list(sorted(time_to_verify))
+	ys = [time_to_verify[x] for x in xs]
+
+	df["TTV"] = pd.Series(ys, xs)
+
+	ax.plot(df["Time"].values, df["TTV"].values, marker='o', markersize=5, label="ttv")
+
+	ax.set_xlabel('Time (Seconds)')
+	ax.set_ylabel('Time to Verify (Seconds)')
+  
+	fig.legend()
+	fig.savefig("vehicle_utility/ttv_{}.pdf".format(ident))
+
+	del fig
+	del ax
+
 def drawMessageAndVehiclePerSecond(ms, m, v):
 	fig, ax = plt.subplots()
 
@@ -130,6 +200,7 @@ def main():
 	all_vids = sorted(set(rcvd["CurrentVehicleID"].values.tolist()))
 	for vid in all_vids:
 		drawVehicleUtility(rcvd, vid)
+		drawVehicleTimeToVerify(rcvd, vid)
 
 
 if __name__ == "__main__":
