@@ -1,8 +1,11 @@
 Makefile
+MessagePrioritisation
 /out
 /simulation/temp
 /simulation/results
 /simulation/test.py
 /simulation/*.txt
 /simulation/*.png
-MessagePrioritisation
+/simulation/*.pdf
+/simulation/piccadilly.rou.alt.xml
+/simulation/trips.trips.xml

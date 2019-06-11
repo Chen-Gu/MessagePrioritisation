@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 MIN_MESSAGE_THRESHOLD = 20
 
 def getSpeedUtility(s):
-	return 1/(1+math.exp(-0.15*s+5))
+	return 1/(1+math.exp(-0.25*s+5.5))
 
 def getDirectionUtility(h):
 	return 0.0055 * h
@@ -103,7 +103,7 @@ def drawMessageAndVehiclePerSecond(ms, m, v):
 	ax.plot(x_time3, y_message_sent, linestyle='--', label = "The number of messages sent")
   
 	ax.set_xlabel('Time (Seconds)')
-	ax.axis([0, 250, 0, 500])
+	ax.axis([0, 250, 0, 400])
   
 	fig.legend(prop={'size': 9})
 	fig.savefig("mandvpers.pdf")

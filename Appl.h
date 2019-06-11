@@ -1,10 +1,3 @@
-/*
- * TutorialAppl.h
- *
- *  Created on: Oct 10, 2016
- *      Author: greg
- */
-
 #ifndef APPL_H_
 #define APPL_H_
 
@@ -14,6 +7,8 @@
 #include "/home/veins/src/veins/src/veins/modules/mobility/traci/TraCIMobility.h"
 #include "/home/veins/src/veins/src/veins/modules/mobility/traci/TraCICommandInterface.h"
 
+#include<iostream>
+#include<fstream>
 
 using namespace Veins;
 
