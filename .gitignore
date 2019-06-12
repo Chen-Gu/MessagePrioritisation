@@ -8,4 +8,5 @@ MessagePrioritisation
 /simulation/*.png
 /simulation/*.pdf
 /simulation/piccadilly.rou.alt.xml
+/simulation/vehicle_utility
 /simulation/trips.trips.xml

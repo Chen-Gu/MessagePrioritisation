@@ -208,13 +208,13 @@ def drawMessageAndVehiclePerSecond(sent, rcvd):
 	ax.plot(x_time3, y_message_sent, linestyle='-', label = "The number of messages sent")
 	  
 	ax.set_xlabel('Time (Seconds)')
-	ax.axis([0, 250, 0, 450])
+	#ax.axis([0, 250, 0, 450])
 
 	ax2 = ax.twinx()
 	ax2._get_lines.prop_cycler = ax._get_lines.prop_cycler
 	ax2.plot(x_time, y_vehicle, linestyle='-', label = "The number of vehicles")
 	ax2.plot(neigh_xs, neigh_ys, linestyle='-', label = "The average neighbourhood size")
-	ax2.axis([0, 250, 0, 100])
+	#ax2.axis([0, 250, 0, 100])
   
 	fig.legend(prop={'size': 9})
 	fig.savefig("mandvpers.pdf")
