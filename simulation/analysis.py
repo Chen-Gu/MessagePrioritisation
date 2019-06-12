@@ -53,6 +53,40 @@ def calculateMessagesPerSecond(df):
 	
 	return dict(Counter(times))
 
+def calculateAverageNeighbourhoodSize(df):
+	df = df.copy()
+
+	df["Time"] = np.floor(df["Time"])
+
+	df = df[["Time", "CurrentVehicleID", "ReceivedVehicleID"]]
+
+	print(df)
+
+	gdf = df.groupby(["Time"])
+
+	 #.apply(lambda x: x.groupby(["CurrentVehicleID"])["ReceivedVehicleID"].agg(lambda y: y.unique().sum()/x.nunique()))
+
+	print(gdf)
+
+	result = {}
+
+	for name, grp in gdf:
+		#print("===", name, "===")
+		#print(grp)
+
+		gdf2 = grp.groupby(["CurrentVehicleID"])["ReceivedVehicleID"].nunique()
+
+		#print(gdf2)
+
+		#print()
+		#print()
+
+
+		result[name] = gdf2.mean()
+
+
+	return result
+
 # Calculate the number of cars per second based on the car's ID from message sent.
 def calculateVehiclePerSecond(df):
 	times = np.floor(df["Time"])
@@ -156,30 +190,38 @@ def drawVehicleTimeToVerify(rcvd, ident):
 	del fig
 	del ax
 
-def drawMessageAndVehiclePerSecond(ms, m, v):
+def drawMessageAndVehiclePerSecond(sent, rcvd):
 	fig, ax = plt.subplots()
 
-	x_time = list(v.keys())
-	y_vehicle = list(v.values())
+	ms = calculateMessagesPerSecond(sent)
+	m = calculateMessagesPerSecond(rcvd)
+	v = calculateVehiclePerSecond(rcvd)
 
-	x_time2 = list(m.keys())
-	y_message = list(m.values())
+	ans = calculateAverageNeighbourhoodSize(rcvd)
 
-	x_time3 = list(ms.keys())
-	y_message_sent = list(ms.values())
- 
-	ax.plot(x_time, y_vehicle, linestyle='-.', label = "The number of vehicles")
+	x_time, y_vehicle = zip(*v.items())
+	x_time2, y_message = zip(*m.items())
+	x_time3, y_message_sent = zip(*ms.items())
+	neigh_xs, neigh_ys = zip(*ans.items())
+
 	ax.plot(x_time2, y_message, linestyle='-', label = "The number of messages received") 
-	ax.plot(x_time3, y_message_sent, linestyle='--', label = "The number of messages sent")
-  
+	ax.plot(x_time3, y_message_sent, linestyle='-', label = "The number of messages sent")
+	  
 	ax.set_xlabel('Time (Seconds)')
-	ax.axis([0, 250, 0, 400])
+	ax.axis([0, 250, 0, 450])
+
+	ax2 = ax.twinx()
+	ax2._get_lines.prop_cycler = ax._get_lines.prop_cycler
+	ax2.plot(x_time, y_vehicle, linestyle='-', label = "The number of vehicles")
+	ax2.plot(neigh_xs, neigh_ys, linestyle='-', label = "The average neighbourhood size")
+	ax2.axis([0, 250, 0, 100])
   
 	fig.legend(prop={'size': 9})
 	fig.savefig("mandvpers.pdf")
 
 	del fig
 	del ax
+	del ax2
 
 def main():
 	print("Opening results files...")
@@ -187,11 +229,7 @@ def main():
 	rcvd = pd.read_csv("results_received.txt", sep='|')
 	sent = pd.read_csv("results_sent.txt", sep='|')
 
-	drawMessageAndVehiclePerSecond(
-		calculateMessagesPerSecond(sent),
-		calculateMessagesPerSecond(rcvd),
-		calculateVehiclePerSecond(rcvd)
-	)
+	drawMessageAndVehiclePerSecond(sent, rcvd)
 
 	rcvd["Utility"] = rcvd.apply(CalculateTotalUtility, axis=1)
 
