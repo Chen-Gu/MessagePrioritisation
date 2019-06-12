@@ -20,13 +20,13 @@ void Appl::initialize(int stage)
         T_GenCam_DCC = par("T_GenCam_DCC");
         T_CheckCamGen = par("T_CheckCamGen");
 
-        T_CheckCamGen_timer = new cMessage("T_GenCam_DCC Timer");
-        scheduleAt(simTime() + T_CheckCamGen_DCC, T_CheckCamGen_timer);
+        T_CheckCamGen_timer = new cMessage("T_CheckGenCam Timer", T_CheckCamGen_EVT);
+        scheduleAt(simTime() + T_GenCam_DCC, T_CheckCamGen_timer);
 
         //setup veins pointers
-        mobility = TraCIMobilityAccess().get(getParentModule());
+        /*mobility = TraCIMobilityAccess().get(getParentModule());
         traci = mobility->getCommandInterface();
-        traciVehicle = mobility->getVehicleCommandInterface();
+        traciVehicle = mobility->getVehicleCommandInterface();*/
 
         stateChanged = false;
         lastSent = simTime();
@@ -51,11 +51,13 @@ void Appl::finish()
     cancelAndDelete(T_CheckCamGen_timer);
 }
 
-void AppL::handleMessage(cMessage *msg) {
+void Appl::handleSelfMsg(cMessage *msg) {
+    DemoBaseApplLayer::handleSelfMsg(msg);
+
     if (msg == T_CheckCamGen_timer) {
         considerSendCAM();
 
-        scheduleAt(simTime() + T_CheckCamGen_DCC, T_CheckCamGen_timer);
+        scheduleAt(simTime() + T_GenCam_DCC, T_CheckCamGen_timer);
     }
 }
 
@@ -116,11 +118,16 @@ void Appl::handlePositionUpdate(cObject* obj) {
 }
 
 bool Appl::shouldSendCAM() {
-    return stateChanged || currentTime - lastSent >= T_GenCam_DCC;
+    return stateChanged || simTime() - lastSent >= T_GenCam_DCC;
 }
 
-void AppL::considerSendCAM() {
+void Appl::considerSendCAM() {
     if (shouldSendCAM()) {
+        simtime_t currentTime = simTime();
+        double currentSpeed = mobility->getSpeed();
+        Coord currentDir = mobility->getCurrentDirection();
+        Coord currentposition = mobility->getPositionAt(currentTime);
+
         ApplMessage* wsm = new ApplMessage();
 
         wsm->setSenderAddress(myId);

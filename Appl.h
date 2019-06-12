@@ -16,6 +16,10 @@ class Appl : public DemoBaseApplLayer {
         virtual void receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj, cObject* details);
         virtual void finish();
 
+        enum {
+            T_CheckCamGen_EVT = 3,
+        };
+
     protected:
         simtime_t T_GenCam_DCC;
         simtime_t T_CheckCamGen;
@@ -33,7 +37,7 @@ class Appl : public DemoBaseApplLayer {
 
         virtual void onWSM(BaseFrame1609_4* frame);
         virtual void handlePositionUpdate(cObject* obj);
-        virtual void handleMessage(cMessage *msg);
+        virtual void handleSelfMsg(cMessage *msg);
 
     protected:
         bool shouldSendCAM();

@@ -18,10 +18,10 @@ import org.car2x.veins.modules.application.ieee80211p.DemoBaseApplLayer;
 
 simple Appl extends DemoBaseApplLayer
 {
-	//declarations go here
-	@class(Appl);
-
 	parameters:
-		string T_CheckCamGen = default("0.1s");
-		string T_GenCam_DCC = default("0.1s");
+		//declarations go here
+		@class(Appl);
+
+		double T_CheckCamGen = default(0.01s) @unit(s);
+		double T_GenCam_DCC = default(0.1s) @unit(s);
 }
