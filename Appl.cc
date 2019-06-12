@@ -17,10 +17,18 @@ void Appl::initialize(int stage)
 
     if (stage == 0) 
     {
+        T_GenCam_DCC = par("T_GenCam_DCC");
+        T_CheckCamGen = par("T_CheckCamGen");
+
+        T_CheckCamGen_timer = new cMessage("T_GenCam_DCC Timer");
+        scheduleAt(simTime() + T_CheckCamGen_DCC, T_CheckCamGen_timer);
+
         //setup veins pointers
         mobility = TraCIMobilityAccess().get(getParentModule());
         traci = mobility->getCommandInterface();
         traciVehicle = mobility->getVehicleCommandInterface();
+
+        stateChanged = false;
         lastSent = simTime();
         lastSpeed = 0;
 
@@ -35,6 +43,19 @@ void Appl::initialize(int stage)
             sent_log.open("results_sent.txt", std::ofstream::out | std::ofstream::trunc);
             sent_log << "Time|CurrentVehicleID|Speed|Direction|Distance|Acceleration"<<std::endl;
         }
+    }
+}
+
+void Appl::finish()
+{
+    cancelAndDelete(T_CheckCamGen_timer);
+}
+
+void AppL::handleMessage(cMessage *msg) {
+    if (msg == T_CheckCamGen_timer) {
+        considerSendCAM();
+
+        scheduleAt(simTime() + T_CheckCamGen_DCC, T_CheckCamGen_timer);
     }
 }
 
@@ -87,12 +108,19 @@ void Appl::handlePositionUpdate(cObject* obj) {
 
     double currH = 180*(atan2(currentDir.y, currentDir.x))/M_PI;
     double lastH = 180*(atan2(lastDirection.y, lastDirection.x))/M_PI;
-    
-    if (currentTime - lastSent >= CAM_INTER ||  
+
+    stateChanged = stateChanged ||
         abs(currentSpeed - lastSpeed) >= 1.0 ||
         abs(currH - lastH) > 4.0 ||
-        calculateDistance(currentposition, lastPosition) > 5.0)
-    {
+        calculateDistance(currentposition, lastPosition) > 5.0;
+}
+
+bool Appl::shouldSendCAM() {
+    return stateChanged || currentTime - lastSent >= T_GenCam_DCC;
+}
+
+void AppL::considerSendCAM() {
+    if (shouldSendCAM()) {
         ApplMessage* wsm = new ApplMessage();
 
         wsm->setSenderAddress(myId);
@@ -102,7 +130,7 @@ void Appl::handlePositionUpdate(cObject* obj) {
 
         //Calculate the acceleration
         if (currentTime - lastSent <= 0)
-            CurrAcceleration = NAN; //(currentSpeed - lastSpeed)/0.1;
+            CurrAcceleration = NAN;
         else
             CurrAcceleration = (currentSpeed - lastSpeed)/(currentTime - lastSent);
 
@@ -122,5 +150,6 @@ void Appl::handlePositionUpdate(cObject* obj) {
         lastSpeed = currentSpeed;
         lastDirection = currentDir;
         lastPosition = currentposition;
+        stateChanged = false;
     }
 }

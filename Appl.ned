@@ -20,4 +20,8 @@ simple Appl extends DemoBaseApplLayer
 {
 	//declarations go here
 	@class(Appl);
+
+	parameters:
+		string T_CheckCamGen = default("0.1s");
+		string T_GenCam_DCC = default("0.1s");
 }
