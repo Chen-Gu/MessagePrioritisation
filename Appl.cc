@@ -23,11 +23,6 @@ void Appl::initialize(int stage)
         T_CheckCamGen_timer = new cMessage("T_CheckGenCam Timer", T_CheckCamGen_EVT);
         scheduleAt(simTime() + T_GenCam_DCC, T_CheckCamGen_timer);
 
-        //setup veins pointers
-        /*mobility = TraCIMobilityAccess().get(getParentModule());
-        traci = mobility->getCommandInterface();
-        traciVehicle = mobility->getVehicleCommandInterface();*/
-
         stateChanged = false;
         lastSent = simTime();
         lastSpeed = 0;
@@ -35,13 +30,13 @@ void Appl::initialize(int stage)
         if (!rcvd_log.is_open())
         {
             rcvd_log.open("results_received.txt", std::ofstream::out | std::ofstream::trunc);
-            rcvd_log << "Time|CurrentVehicleID|ReceivedVehicleID|Speed|Direction|Distance|Acceleration"<<std::endl;
+            rcvd_log << "Time|CurrentVehicleID|ReceivedVehicleID|Speed|Heading|Distance|Acceleration"<<std::endl;
         }
 
         if (!sent_log.is_open())
         {
             sent_log.open("results_sent.txt", std::ofstream::out | std::ofstream::trunc);
-            sent_log << "Time|CurrentVehicleID|Speed|Direction|Distance|Acceleration"<<std::endl;
+            sent_log << "Time|CurrentVehicleID|Speed|Heading|Distance|Acceleration"<<std::endl;
         }
     }
 }
@@ -81,21 +76,18 @@ double calculateDistance (Coord mylocation, Coord received)
 void Appl::onWSM(BaseFrame1609_4* frame)
 {
     ApplMessage* wsm = check_and_cast<ApplMessage*>(frame);
-    double distance = 0;
-    double myDirection = 0;
-    double receivedVehicleDirection = 0;
 
-    myDirection = 180*(atan2(mobility->getCurrentDirection().y, mobility->getCurrentDirection().x))/M_PI;
-    receivedVehicleDirection = 180*(atan2(wsm->getDirection().y, wsm->getDirection().x))/M_PI;
+    const double myHeading = mobility->getHeading().getRad();
+    const double receivedVehicleHeading = wsm->getHeading();
 
-    distance = calculateDistance(mobility->getPositionAt(simTime()), wsm->getLocation());
+    double distance = calculateDistance(mobility->getPositionAt(simTime()), wsm->getLocation());
     Coord mylocation = mobility->getPositionAt(simTime());
 
     rcvd_log<< simTime() <<"|"
             << myId <<"|"
             << wsm->getSenderAddress() <<"|"
             << wsm->getSpeed() <<"|"
-            << abs(myDirection - receivedVehicleDirection) << "|"
+            << abs(myHeading - receivedVehicleHeading) << "|"
             << distance << "|"
             << wsm->getAcceleration() << std::endl;
 }
@@ -105,15 +97,13 @@ void Appl::handlePositionUpdate(cObject* obj) {
 
     simtime_t currentTime = simTime();
     double currentSpeed = mobility->getSpeed();
-    Coord currentDir = mobility->getCurrentDirection();
     Coord currentposition = mobility->getPositionAt(currentTime);
 
-    double currH = 180*(atan2(currentDir.y, currentDir.x))/M_PI;
-    double lastH = 180*(atan2(lastDirection.y, lastDirection.x))/M_PI;
+    const double currH = mobility->getHeading().getRad();
 
     stateChanged = stateChanged ||
         abs(currentSpeed - lastSpeed) >= 1.0 ||
-        abs(currH - lastH) > 4.0 ||
+        abs(currH - lastHeading) > 4.0 ||
         calculateDistance(currentposition, lastPosition) > 5.0;
 }
 
@@ -125,14 +115,14 @@ void Appl::considerSendCAM() {
     if (shouldSendCAM()) {
         simtime_t currentTime = simTime();
         double currentSpeed = mobility->getSpeed();
-        Coord currentDir = mobility->getCurrentDirection();
+        double currentHeading = mobility->getHeading().getRad();
         Coord currentposition = mobility->getPositionAt(currentTime);
 
         ApplMessage* wsm = new ApplMessage();
 
         wsm->setSenderAddress(myId);
         wsm->setSpeed(currentSpeed);
-        wsm->setDirection(currentDir);
+        wsm->setHeading(currentHeading);
         wsm->setLocation(currentposition);
 
         //Calculate the acceleration
@@ -149,13 +139,13 @@ void Appl::considerSendCAM() {
         sent_log << currentTime <<"|"
             << myId <<"|"
             << currentSpeed <<"|"
-            << currentDir << "|"
+            << currentHeading << "|"
             << currentposition << "|"
             << CurrAcceleration << std::endl;
 
         lastSent = currentTime;
         lastSpeed = currentSpeed;
-        lastDirection = currentDir;
+        lastHeading = currentHeading;
         lastPosition = currentposition;
         stateChanged = false;
     }

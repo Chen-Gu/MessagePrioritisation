@@ -30,7 +30,7 @@ class Appl : public DemoBaseApplLayer {
 
         simtime_t lastSent; // the last time this sent a message
         double lastSpeed;   // the last-time speed of a car
-        Coord lastDirection; 
+        double lastHeading; 
         Coord lastPosition;
         
         double CurrAcceleration;
