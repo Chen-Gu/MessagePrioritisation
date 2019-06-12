@@ -31,7 +31,7 @@ namespace Veins {
  * packet ApplMessage extends BaseFrame1609_4
  * {
  *     double speed;
- *     Coord direction;
+ *     double heading;
  *     Coord location;
  *     double acceleration;
  *     LAddress::L2Type senderAddress = -1;
@@ -42,7 +42,7 @@ class ApplMessage : public ::Veins::BaseFrame1609_4
 {
   protected:
     double speed;
-    Coord direction;
+    double heading;
     Coord location;
     double acceleration;
     LAddress::L2Type senderAddress;
@@ -66,9 +66,8 @@ class ApplMessage : public ::Veins::BaseFrame1609_4
     // field getter/setter methods
     virtual double getSpeed() const;
     virtual void setSpeed(double speed);
-    virtual Coord& getDirection();
-    virtual const Coord& getDirection() const {return const_cast<ApplMessage*>(this)->getDirection();}
-    virtual void setDirection(const Coord& direction);
+    virtual double getHeading() const;
+    virtual void setHeading(double heading);
     virtual Coord& getLocation();
     virtual const Coord& getLocation() const {return const_cast<ApplMessage*>(this)->getLocation();}
     virtual void setLocation(const Coord& location);

@@ -183,6 +183,7 @@ Register_Class(ApplMessage)
 ApplMessage::ApplMessage(const char *name, short kind) : ::Veins::BaseFrame1609_4(name,kind)
 {
     this->speed = 0;
+    this->heading = 0;
     this->acceleration = 0;
     this->senderAddress = -1;
 }
@@ -207,7 +208,7 @@ ApplMessage& ApplMessage::operator=(const ApplMessage& other)
 void ApplMessage::copy(const ApplMessage& other)
 {
     this->speed = other.speed;
-    this->direction = other.direction;
+    this->heading = other.heading;
     this->location = other.location;
     this->acceleration = other.acceleration;
     this->senderAddress = other.senderAddress;
@@ -217,7 +218,7 @@ void ApplMessage::parsimPack(omnetpp::cCommBuffer *b) const
 {
     ::Veins::BaseFrame1609_4::parsimPack(b);
     doParsimPacking(b,this->speed);
-    doParsimPacking(b,this->direction);
+    doParsimPacking(b,this->heading);
     doParsimPacking(b,this->location);
     doParsimPacking(b,this->acceleration);
     doParsimPacking(b,this->senderAddress);
@@ -227,7 +228,7 @@ void ApplMessage::parsimUnpack(omnetpp::cCommBuffer *b)
 {
     ::Veins::BaseFrame1609_4::parsimUnpack(b);
     doParsimUnpacking(b,this->speed);
-    doParsimUnpacking(b,this->direction);
+    doParsimUnpacking(b,this->heading);
     doParsimUnpacking(b,this->location);
     doParsimUnpacking(b,this->acceleration);
     doParsimUnpacking(b,this->senderAddress);
@@ -243,14 +244,14 @@ void ApplMessage::setSpeed(double speed)
     this->speed = speed;
 }
 
-Coord& ApplMessage::getDirection()
+double ApplMessage::getHeading() const
 {
-    return this->direction;
+    return this->heading;
 }
 
-void ApplMessage::setDirection(const Coord& direction)
+void ApplMessage::setHeading(double heading)
 {
-    this->direction = direction;
+    this->heading = heading;
 }
 
 Coord& ApplMessage::getLocation()
@@ -361,7 +362,7 @@ unsigned int ApplMessageDescriptor::getFieldTypeFlags(int field) const
     }
     static unsigned int fieldTypeFlags[] = {
         FD_ISEDITABLE,
-        FD_ISCOMPOUND,
+        FD_ISEDITABLE,
         FD_ISCOMPOUND,
         FD_ISEDITABLE,
         FD_ISCOMPOUND,
@@ -379,7 +380,7 @@ const char *ApplMessageDescriptor::getFieldName(int field) const
     }
     static const char *fieldNames[] = {
         "speed",
-        "direction",
+        "heading",
         "location",
         "acceleration",
         "senderAddress",
@@ -392,7 +393,7 @@ int ApplMessageDescriptor::findField(const char *fieldName) const
     omnetpp::cClassDescriptor *basedesc = getBaseClassDescriptor();
     int base = basedesc ? basedesc->getFieldCount() : 0;
     if (fieldName[0]=='s' && strcmp(fieldName, "speed")==0) return base+0;
-    if (fieldName[0]=='d' && strcmp(fieldName, "direction")==0) return base+1;
+    if (fieldName[0]=='h' && strcmp(fieldName, "heading")==0) return base+1;
     if (fieldName[0]=='l' && strcmp(fieldName, "location")==0) return base+2;
     if (fieldName[0]=='a' && strcmp(fieldName, "acceleration")==0) return base+3;
     if (fieldName[0]=='s' && strcmp(fieldName, "senderAddress")==0) return base+4;
@@ -409,7 +410,7 @@ const char *ApplMessageDescriptor::getFieldTypeString(int field) const
     }
     static const char *fieldTypeStrings[] = {
         "double",
-        "Coord",
+        "double",
         "Coord",
         "double",
         "LAddress::L2Type",
@@ -482,7 +483,7 @@ std::string ApplMessageDescriptor::getFieldValueAsString(void *object, int field
     ApplMessage *pp = (ApplMessage *)object; (void)pp;
     switch (field) {
         case 0: return double2string(pp->getSpeed());
-        case 1: {std::stringstream out; out << pp->getDirection(); return out.str();}
+        case 1: return double2string(pp->getHeading());
         case 2: {std::stringstream out; out << pp->getLocation(); return out.str();}
         case 3: return double2string(pp->getAcceleration());
         case 4: {std::stringstream out; out << pp->getSenderAddress(); return out.str();}
@@ -501,6 +502,7 @@ bool ApplMessageDescriptor::setFieldValueAsString(void *object, int field, int i
     ApplMessage *pp = (ApplMessage *)object; (void)pp;
     switch (field) {
         case 0: pp->setSpeed(string2double(value)); return true;
+        case 1: pp->setHeading(string2double(value)); return true;
         case 3: pp->setAcceleration(string2double(value)); return true;
         default: return false;
     }
@@ -515,7 +517,6 @@ const char *ApplMessageDescriptor::getFieldStructName(int field) const
         field -= basedesc->getFieldCount();
     }
     switch (field) {
-        case 1: return omnetpp::opp_typename(typeid(Coord));
         case 2: return omnetpp::opp_typename(typeid(Coord));
         case 4: return omnetpp::opp_typename(typeid(LAddress::L2Type));
         default: return nullptr;
@@ -532,7 +533,6 @@ void *ApplMessageDescriptor::getFieldStructValuePointer(void *object, int field,
     }
     ApplMessage *pp = (ApplMessage *)object; (void)pp;
     switch (field) {
-        case 1: return (void *)(&pp->getDirection()); break;
         case 2: return (void *)(&pp->getLocation()); break;
         case 4: return (void *)(&pp->getSenderAddress()); break;
         default: return nullptr;
