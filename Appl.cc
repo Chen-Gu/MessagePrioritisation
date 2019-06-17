@@ -77,6 +77,8 @@ void Appl::onWSM(BaseFrame1609_4* frame)
 {
     ApplMessage* wsm = check_and_cast<ApplMessage*>(frame);
 
+    findHost()->getDisplayString().setTagArg("i", 1, "green");
+
     const double myHeading = mobility->getHeading().getRad();
     const double receivedVehicleHeading = wsm->getHeading();
 
