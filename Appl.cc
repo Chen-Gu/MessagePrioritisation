@@ -4,6 +4,12 @@
 #include <math.h>
 #include "ApplMessage_m.h"
 
+#include <math.h>
+
+// from: https://stackoverflow.com/questions/14920675/is-there-a-function-in-c-language-to-calculate-degrees-radians
+#define degToRad(angleInDegrees) ((angleInDegrees) * M_PI / 180.0)
+#define radToDeg(angleInRadians) ((angleInRadians) * 180.0 / M_PI)
+
 using Veins::TraCIMobilityAccess;
 using Veins::AnnotationManagerAccess;
 
@@ -103,7 +109,7 @@ void Appl::handlePositionUpdate(cObject* obj) {
 
     stateChanged = stateChanged ||
         abs(currentSpeed - lastSpeed) >= 1.0 ||
-        abs(currH - lastHeading) > 4.0 ||
+        abs(currH - lastHeading) > degToRad(4.0) ||
         calculateDistance(currentposition, lastPosition) > 5.0;
 }
 
