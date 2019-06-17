@@ -19,20 +19,46 @@ VERIFY_PER_SEC = 176.7453299687368
 SEC_PER_VERIFY = 1.0 / VERIFY_PER_SEC
 
 def getSpeedUtility(s):
-	return 1/(1+math.exp(-0.25*s+5.5))
+	u = 1.0/(1+math.exp(-0.25*s+5.5))
 
-def getDirectionUtility(h):
-	return 0.0055 * h
+	assert 0 <= u <= 1
+	return u
+
+def getHeadingUtility(h):
+	h = min(math.degrees(h), 180)
+
+	u = h / 180
+
+	try:
+		assert 0 <= u <= 1
+	except AssertionError:
+		print(h, math.degrees(h), u)
+		raise
+	return u
 
 def getDistanceUtility(d):
-	return 1/(1+math.exp(0.5*d-5))
+	u = 1.0/(1+math.exp(0.5*d-5))
+
+	assert 0 <= u <= 1
+	return u
 
 def getAccelerationUtility(a):
-	return 0.05 * a
+	max_utility_at = 20 # m/s
+
+	a = min(abs(a), max_utility_at)
+
+	u = a / max_utility_at
+
+	try:
+		assert 0 <= u <= 1
+	except AssertionError:
+		print(a, u)
+		raise
+	return u
 
 UTILITY_MAP = {
 	"Speed": getSpeedUtility,
-	"Direction": getDirectionUtility,
+	"Heading": getHeadingUtility,
 	"Distance": getDistanceUtility,
 	"Acceleration": getAccelerationUtility,
 }
@@ -40,7 +66,7 @@ UTILITY_MAP = {
 def CalculateTotalUtility(x):
 	weights = {
 		"Speed": 0.25,
-		"Direction": 0.25,
+		"Heading": 0.25,
 		"Distance": 0.25,
 		"Acceleration": 0.25,
 	}
@@ -64,8 +90,6 @@ def calculateAverageNeighbourhoodSize(df):
 
 	gdf = df.groupby(["Time"])
 
-	 #.apply(lambda x: x.groupby(["CurrentVehicleID"])["ReceivedVehicleID"].agg(lambda y: y.unique().sum()/x.nunique()))
-
 	print(gdf)
 
 	result = {}
@@ -81,9 +105,7 @@ def calculateAverageNeighbourhoodSize(df):
 		#print()
 		#print()
 
-
 		result[name] = gdf2.mean()
-
 
 	return result
 
@@ -163,7 +185,7 @@ def drawVehicleTimeToVerify(rcvd, ident):
 
 		#print("TIME:", current_time, "----", "QSIZE", pqueue.qsize())
 
-	if not pqueue.empty():
+	while not pqueue.empty():
 		item = pqueue.get()
 
 		(item_utility, item_index, item_row) = item
@@ -171,8 +193,6 @@ def drawVehicleTimeToVerify(rcvd, ident):
 		current_time += SEC_PER_VERIFY
 
 		time_to_verify[item_index] = (current_time - item_row["Time"]) #/ SEC_PER_VERIFY
-
-	assert pqueue.empty()
 
 	xs = list(sorted(time_to_verify))
 	ys = [time_to_verify[x] for x in xs]
