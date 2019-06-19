@@ -43,7 +43,7 @@ def getDistanceUtility(d):
 	return u
 
 def getAccelerationUtility(a):
-	max_utility_at = 20 # m/s
+	max_utility_at = 5 # m/s
 
 	a = min(abs(a), max_utility_at)
 
