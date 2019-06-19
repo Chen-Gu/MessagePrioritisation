@@ -145,7 +145,7 @@ def drawVehicleUtility(rcvd, ident):
 	ax.set_xlabel('Time (Seconds)')
 	ax.set_ylabel('Utility')
   
-	fig.legend()
+	ax.legend(prop={'size': 9}, loc='upper right')
 	fig.savefig("vehicle_utility/utility_{}.pdf".format(ident))
 
 	del fig
@@ -207,7 +207,7 @@ def drawVehicleTimeToVerify(rcvd, ident):
 	ax.set_xlabel('Time (Seconds)')
 	ax.set_ylabel('Time to Verify (Seconds)')
   
-	fig.legend()
+	ax.legend(prop={'size': 9}, loc='upper right')
 	fig.savefig("vehicle_utility/ttv_{}.pdf".format(ident))
 
 	del fig
@@ -234,7 +234,7 @@ def drawMessageAndVehiclePerSecond(sent, rcvd):
 	ax.set_xlabel('Time (Seconds)')
 	ax.axis([0, 500, 0, 6000])
 
-	fig.legend(prop={'size': 9}, loc='upper center')
+	ax.legend(prop={'size': 9}, loc='upper right')
 	fig.savefig("sentAndReceived.pdf")
 
 	#ax2 = ax.twinx()
@@ -245,7 +245,7 @@ def drawMessageAndVehiclePerSecond(sent, rcvd):
 	ax2.set_xlabel('Time (Seconds)')
 	ax2.axis([0, 500, 0, 350])
 
-	fig2.legend(prop={'size': 9}, loc='upper center')
+	ax2.legend(prop={'size': 9}, loc='upper right')
 	fig2.savefig("vehiclesAndNeighbour.pdf")
 
 	del fig
