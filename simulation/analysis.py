@@ -124,6 +124,8 @@ def calculateVehiclePerSecond(df):
 
 def drawVehicleUtility(rcvd, ident):
 	fig, ax = plt.subplots()
+	i = 0
+	marker = ['o', 's', 'x', '^', '+']
 
 	df = rcvd[rcvd["CurrentVehicleID"] == ident]
 
@@ -137,7 +139,8 @@ def drawVehicleUtility(rcvd, ident):
 		if len(x_time) < MIN_MESSAGE_THRESHOLD:
 			continue
 
-		ax.plot(x_time, y_utility, marker='o', markersize=5, label=name)
+		ax.plot(x_time, y_utility, marker="{0}".format(marker[i%4]), markersize=5, label="Vehicle {0}".format(i+1))
+		i = i+1
 
 	ax.set_xlabel('Time (Seconds)')
 	ax.set_ylabel('Utility')
@@ -212,6 +215,7 @@ def drawVehicleTimeToVerify(rcvd, ident):
 
 def drawMessageAndVehiclePerSecond(sent, rcvd):
 	fig, ax = plt.subplots()
+	fig2, ax2 = plt.subplots()
 
 	ms = calculateMessagesPerSecond(sent)
 	m = calculateMessagesPerSecond(rcvd)
@@ -228,18 +232,24 @@ def drawMessageAndVehiclePerSecond(sent, rcvd):
 	ax.plot(x_time3, y_message_sent, linestyle='-', label = "The number of messages sent")
 	  
 	ax.set_xlabel('Time (Seconds)')
-	#ax.axis([0, 250, 0, 450])
+	ax.axis([0, 500, 0, 6000])
 
-	ax2 = ax.twinx()
-	ax2._get_lines.prop_cycler = ax._get_lines.prop_cycler
+	fig.legend(prop={'size': 9}, loc='upper center')
+	fig.savefig("sentAndReceived.pdf")
+
+	#ax2 = ax.twinx()
+	#ax2._get_lines.prop_cycler = ax._get_lines.prop_cycler
 	ax2.plot(x_time, y_vehicle, linestyle='-', label = "The number of vehicles")
-	ax2.plot(neigh_xs, neigh_ys, linestyle='-', label = "The average neighbourhood size")
-	#ax2.axis([0, 250, 0, 100])
-  
-	fig.legend(prop={'size': 9})
-	fig.savefig("mandvpers.pdf")
+	ax2.plot(neigh_xs, neigh_ys, linestyle='-.', label = "The average neighbourhood size")
+
+	ax2.set_xlabel('Time (Seconds)')
+	ax2.axis([0, 500, 0, 350])
+
+	fig2.legend(prop={'size': 9}, loc='upper center')
+	fig2.savefig("vehiclesAndNeighbour.pdf")
 
 	del fig
+	del fig2
 	del ax
 	del ax2
 
