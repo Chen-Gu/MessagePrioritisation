@@ -139,7 +139,7 @@ def drawVehicleUtility(rcvd, ident):
 		if len(x_time) < MIN_MESSAGE_THRESHOLD:
 			continue
 
-		ax.plot(x_time, y_utility, marker="{0}".format(marker[i%4]), markersize=5, label="Vehicle {0}".format(i+1))
+		ax.plot(x_time, y_utility, marker="{0}".format(marker[i%len(marker)]), markersize=5, label="Vehicle {0}".format(i+1))
 		i = i+1
 
 	ax.set_xlabel('Time (Seconds)')
