@@ -19,12 +19,12 @@
 //
 
 cplusplus {{
-#include "veins/base/utils/Coord.h"
-#include "veins/modules/messages/BaseFrame1609_4_m.h"
-#include "veins/base/utils/SimpleAddress.h"
+#include "/home/veins/src/veins/src/veins/base/utils/Coord.h"
+#include "/home/veins/src/veins/src/veins/modules/messages/BaseFrame1609_4_m.h"
+#include "/home/veins/src/veins/src/veins/base/utils/SimpleAddress.h"
 }}
 
-namespace Veins;
+namespace veins;
 
 class BaseFrame1609_4;
 class noncobject Coord;
@@ -32,7 +32,7 @@ class LAddress::L2Type extends void;
 
 packet ApplMessage extends BaseFrame1609_4 {
     double speed;
-    double heading; 
+    double heading;
     Coord location;
     double acceleration;
     LAddress::L2Type senderAddress = -1;

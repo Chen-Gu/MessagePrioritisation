@@ -4,13 +4,14 @@
 #include "/home/veins/src/veins/src/veins/modules/application/ieee80211p/DemoBaseApplLayer.h"
 #include "/home/veins/src/veins/src/veins/modules/mobility/traci/TraCIMobility.h"
 #include "/home/veins/src/veins/src/veins/modules/mobility/traci/TraCICommandInterface.h"
+#include "/home/veins/src/veins/src/veins/veins.h"
 
 #include <iostream>
 #include <fstream>
 
-using namespace Veins;
+using namespace veins;
 
-class Appl : public DemoBaseApplLayer {
+class Appl : public veins::DemoBaseApplLayer {
     public:
         virtual void initialize(int stage);
         virtual void receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj, cObject* details);
@@ -30,9 +31,8 @@ class Appl : public DemoBaseApplLayer {
 
         simtime_t lastSent; // the last time this sent a message
         double lastSpeed;   // the last-time speed of a car
-        double lastHeading; 
+        double lastHeading;
         Coord lastPosition;
-        
         double CurrAcceleration;
 
         virtual void onWSM(BaseFrame1609_4* frame);

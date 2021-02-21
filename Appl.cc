@@ -10,8 +10,8 @@
 #define degToRad(angleInDegrees) ((angleInDegrees) * M_PI / 180.0)
 #define radToDeg(angleInRadians) ((angleInRadians) * 180.0 / M_PI)
 
-using Veins::TraCIMobilityAccess;
-using Veins::AnnotationManagerAccess;
+using veins::TraCIMobilityAccess;
+using veins::AnnotationManagerAccess;
 
 Define_Module(Appl);
 
@@ -21,7 +21,7 @@ void Appl::initialize(int stage)
 {
     DemoBaseApplLayer::initialize(stage);
 
-    if (stage == 0) 
+    if (stage == 0)
     {
         T_GenCam_DCC = par("T_GenCam_DCC");
         T_CheckCamGen = par("T_CheckCamGen");
@@ -64,7 +64,7 @@ void Appl::handleSelfMsg(cMessage *msg) {
 
 void Appl::receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj, cObject* details) {
     Enter_Method_Silent();
-    if (signalID == Veins::BaseMobility::mobilityStateChangedSignal) {
+    if (signalID == veins::BaseMobility::mobilityStateChangedSignal) {
         handlePositionUpdate(obj);
     }
 }
@@ -81,7 +81,7 @@ double calculateDistance (Coord mylocation, Coord received)
 
 void Appl::onWSM(BaseFrame1609_4* frame)
 {
-    ApplMessage* wsm = check_and_cast<ApplMessage*>(frame);
+    veins::ApplMessage* wsm = check_and_cast<veins::ApplMessage*>(frame);
 
     findHost()->getDisplayString().setTagArg("i", 1, "green");
 
@@ -126,7 +126,7 @@ void Appl::considerSendCAM() {
         double currentHeading = mobility->getHeading().getRad();
         Coord currentposition = mobility->getPositionAt(currentTime);
 
-        ApplMessage* wsm = new ApplMessage();
+        veins::ApplMessage* wsm = new veins::ApplMessage();
 
         wsm->setSenderAddress(myId);
         wsm->setSpeed(currentSpeed);
