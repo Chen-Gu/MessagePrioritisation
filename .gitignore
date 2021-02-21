@@ -10,3 +10,5 @@ MessagePrioritisation
 /simulation/piccadilly.rou.alt.xml
 /simulation/vehicle_utility
 /simulation/trips.trips.xml
+.settings/language.settings.xml
+simulation/.qtenvrc
